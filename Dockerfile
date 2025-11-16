@@ -48,6 +48,7 @@ RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
 # Expose port
 EXPOSE 8000
 
-# Start PHP-FPM (or use php artisan serve for development)
-CMD ["php-fpm"]
+# Start command - use artisan serve for EasyPanel compatibility
+# If EasyPanel uses PHP-FPM with Nginx, change this to: CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
 
