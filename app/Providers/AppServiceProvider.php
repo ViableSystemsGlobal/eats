@@ -48,6 +48,7 @@ use App\Observers\KotPlaceObserver;
 use App\Observers\MenuItemObserver;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use App\Observers\OrderItemObserver;
 use Illuminate\Support\Facades\Gate;
 use App\Observers\RestaurantObserver;
@@ -145,6 +146,12 @@ class AppServiceProvider extends ServiceProvider
             Translatable::fallback(global_setting()->locale, 'en');
         } catch (\Exception $e) {
             Log::error('Error in Translatable fallback: ' . $e->getMessage());
+        }
+
+        // Ensure Vite uses built assets in production-like environments
+        // This ensures CSS/JS load correctly even when APP_ENV is not 'production'
+        if (app()->environment() !== 'local' && file_exists(public_path('build/manifest.json'))) {
+            Vite::useManifestFilename('build/manifest.json');
         }
 
         // Model::preventLazyLoading(app()->environment('development'));
