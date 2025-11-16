@@ -91,7 +91,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (config('app.redirect_https')) {
+        // Force HTTPS if configured or if request is HTTPS
+        // This handles reverse proxies (like EasyPanel) that forward HTTPS requests
+        if (config('app.redirect_https') || request()->secure() || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
 
