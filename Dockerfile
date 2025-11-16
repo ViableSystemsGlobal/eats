@@ -41,9 +41,12 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Install NPM dependencies and build assets
 RUN npm install && npm run build
 
+# Verify assets were built
+RUN ls -la public/build/ || echo "Assets not found"
+
 # Set permissions again after install
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-    && chmod -R 775 /app/storage /app/bootstrap/cache
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache /app/public/build \
+    && chmod -R 775 /app/storage /app/bootstrap/cache /app/public/build
 
 # Expose port
 EXPOSE 8000
