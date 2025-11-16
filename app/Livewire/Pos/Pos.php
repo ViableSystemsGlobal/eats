@@ -18,6 +18,7 @@ use App\Models\OrderCharge;
 use App\Scopes\BranchScope;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\On;
 use App\Models\ItemCategory;
 use App\Models\ModifierOption;
@@ -97,6 +98,8 @@ class Pos extends Component
     public $cancelReasonText;
     public $taxFormat;
     public $restaurantId;
+    public $itemsPerPage = 50; // Limit initial items to reduce image load
+    public $showAllItems = false;
 
 
 
@@ -1548,8 +1551,30 @@ class Pos extends Component
         $this->showNewKotButton = false;
     }
 
+    public function loadAllItems()
+    {
+        $this->showAllItems = true;
+    }
+
+    public function updatedSearch()
+    {
+        // Reset showAllItems when searching
+        $this->showAllItems = false;
+    }
+
+    public function updatedFilterCategories()
+    {
+        // Reset showAllItems when filtering
+        $this->showAllItems = false;
+    }
+
     public function render()
     {
+        // Build cache key based on filters
+        $cacheKey = 'pos_menu_items_' . restaurant()->id . '_' . 
+                     ($this->filterCategories ?? 'all') . '_' . 
+                     ($this->search ?? 'no_search') . '_' . 
+                     branch()->id;
 
         $query = MenuItem::with(['variations', 'modifierGroups'])->withCount('variations', 'modifierGroups');
 
@@ -1566,10 +1591,31 @@ class Pos extends Component
             });
         }
 
-        $query = $query->get();
+        // Count total items before limiting (clone query to avoid modifying original)
+        $totalItems = (clone $query)->count();
+        
+        // Get all items or limited based on showAllItems flag
+        if ($this->showAllItems || !empty($this->search) || !empty($this->filterCategories)) {
+            // When searching/filtering or showing all, get all results
+            if (empty($this->search) && empty($this->filterCategories)) {
+                // Cache full results when showing all
+                $menuItems = Cache::remember($cacheKey . '_all', 300, function () use ($query) {
+                    return (clone $query)->get();
+                });
+            } else {
+                $menuItems = $query->get();
+            }
+        } else {
+            // Initial load: limit to reduce image requests
+            $menuItems = Cache::remember($cacheKey . '_limited', 300, function () use ($query) {
+                return (clone $query)->limit($this->itemsPerPage)->get();
+            });
+        }
 
         return view('livewire.pos.pos', [
-            'menuItems' => $query
+            'menuItems' => $menuItems,
+            'hasMoreItems' => !$this->showAllItems && empty($this->search) && empty($this->filterCategories) && $totalItems > $this->itemsPerPage,
+            'totalItems' => $totalItems
         ]);
     }
 

@@ -77,14 +77,19 @@
                         </div>
                         
                         {{-- Image Section --}}
-                        <div class="relative aspect-square">
+                        <div class="relative aspect-square bg-gray-200 dark:bg-gray-700 rounded-t-lg">
                             <img class="w-full h-full object-cover rounded-t-lg"
                                 src="{{ $item->item_photo_url }}"
-                                alt="{{ $item->item_name }}" />
+                                alt="{{ $item->item_name }}"
+                                loading="lazy"
+                                decoding="async"
+                                onerror="this.onerror=null; this.src='{{ asset('img/food.svg') }}';" />
                             <span class="absolute top-1 right-1 bg-white/90 dark:bg-gray-800/90 rounded-full p-1 shadow-sm">
                                 <img src="{{ asset('img/' . $item->type . '.svg') }}"
                                     class="h-4 w-4" title="@lang('modules.menu.' . $item->type)"
-                                    alt="" />
+                                    alt=""
+                                    loading="eager"
+                                    decoding="async" />
                             </span>
                         </div>
 
@@ -126,5 +131,19 @@
                 </li>
             @endforelse
         </ul>
+
+        {{-- Load More Button --}}
+        @if(isset($hasMoreItems) && $hasMoreItems)
+            <div class="mt-4 text-center">
+                <button wire:click="loadAllItems" 
+                        class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 transition-colors">
+                    @if(isset($totalItems))
+                        Load All Items (Showing {{ count($menuItems) }} of {{ $totalItems }})
+                    @else
+                        Load All Items
+                    @endif
+                </button>
+            </div>
+        @endif
     </div>
 </div>
