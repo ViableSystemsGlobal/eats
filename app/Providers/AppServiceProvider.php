@@ -48,7 +48,6 @@ use App\Observers\KotPlaceObserver;
 use App\Observers\MenuItemObserver;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Vite;
 use App\Observers\OrderItemObserver;
 use Illuminate\Support\Facades\Gate;
 use App\Observers\RestaurantObserver;
@@ -148,10 +147,14 @@ class AppServiceProvider extends ServiceProvider
             Log::error('Error in Translatable fallback: ' . $e->getMessage());
         }
 
-        // Ensure Vite uses built assets in production-like environments
-        // This ensures CSS/JS load correctly even when APP_ENV is not 'production'
-        if (app()->environment() !== 'local' && file_exists(public_path('build/manifest.json'))) {
-            Vite::useManifestFilename('build/manifest.json');
+        // Ensure Vite manifest is accessible in production
+        // Laravel Vite automatically detects public/build/manifest.json
+        // This check ensures the manifest exists and is readable
+        if (app()->environment() !== 'local') {
+            $manifestPath = public_path('build/manifest.json');
+            if (!file_exists($manifestPath)) {
+                Log::warning('Vite manifest.json not found. Run "npm run build" to generate assets.');
+            }
         }
 
         // Model::preventLazyLoading(app()->environment('development'));
